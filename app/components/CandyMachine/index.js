@@ -1,25 +1,30 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { Program, AnchorProvider, web3 } from "@project-serum/anchor";
+import { Program, Provider, web3 } from "@project-serum/anchor";
 import { MintLayout, TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
-import { sendTransactions } from "./connection";
-import "./CandyMachine.css";
+import { sendTransactions } from "./connection.tsx";
+//import "./CandyMachine.css";
 import {
-    candyMachineProgram,
-    TOKEN_METADATA_PROGRAM_ID,
     SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
     getAtaForMint,
     getNetworkExpire,
     getNetworkToken,
     CIVIC,
-} from "./helpers";
+} from "./helpers.ts";
 
 const { SystemProgram } = web3;
 const opts = {
     preflightCommitment: "processed",
 };
 
+const candyMachineProgram = new web3.PublicKey("cndy3Z4yapfJBmL3ShUp5exZKqR3z33thTzeNMm2gRZ");
+
+const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+
 const CandyMachine = ({ walletAddress }) => {
+
+    const [candyMachine, setCandyMachine] = useState(null);
+
     const getCandyMachineCreator = async (candyMachine) => {
         const candyMachineID = new PublicKey(candyMachine);
         return await web3.PublicKey.findProgramAddress([Buffer.from("candy_machine"), candyMachineID.toBuffer()], candyMachineProgram);
@@ -28,7 +33,9 @@ const CandyMachine = ({ walletAddress }) => {
     const getMetadata = async (mint) => {
         return (
             await PublicKey.findProgramAddress(
-                [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+                [Buffer.from("metadata"),
+                TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+                mint.toBuffer()],
                 TOKEN_METADATA_PROGRAM_ID
             )
         )[0];
@@ -67,6 +74,109 @@ const CandyMachine = ({ walletAddress }) => {
             data: Buffer.from([]),
         });
     };
+
+    const getProvider = () => {
+        const rpcHost = process.env.NEXT_PUBLIC_SOLANA_RPC_HOST;
+
+        // Crie um novo objeto de conexão
+        const connection = new Connection(rpcHost);
+        // Crie um novo objeto de provedor Solana
+        const provider = new Provider(
+          connection,
+          window.solana,
+          opts.preflightCommitment
+        );
+      
+        return provider;
+    };
+
+    const getCandyMachineState = async () => { 
+        const provider = getProvider();
+        const idl = await Program.fetchIdl(candyMachineProgram, provider);
+        const program = new Program(idl, candyMachineProgram, provider);
+        const candyMachine = await program.account.candyMachine.fetch(
+          process.env.NEXT_PUBLIC_CANDY_MACHINE_ID
+        );
+
+        const itemsAvailable = candyMachine.data.itemsAvailable.toNumber();
+        const itemsRedeemed = candyMachine.itemsRedeemed.toNumber();
+        const itemsRemaining = itemsAvailable - itemsRedeemed;
+        const goLiveData = candyMachine.data.goLiveDate.toNumber();
+        const presale =
+          candyMachine.data.whitelistMintSettings &&
+          candyMachine.data.whitelistMintSettings.presale &&
+          (!candyMachine.data.goLiveDate ||
+            candyMachine.data.goLiveDate.toNumber() > new Date().getTime() / 1000);
+      
+        const goLiveDateTimeString = `${new Date(
+          goLiveData * 1000
+        ).toGMTString()}`
+      
+        // Adicione esses dados ao seu estado para renderizar
+        setCandyMachine({
+          id: new web3.PublicKey(process.env.NEXT_PUBLIC_CANDY_MACHINE_ID),
+          program,
+          state: {
+            authority: candyMachine.authority,
+            retainAuthority: candyMachine.data.retainAuthority,
+            itemsAvailable,
+            itemsRedeemed,
+            itemsRemaining,
+            goLiveData,
+            goLiveDateTimeString,
+            isSoldOut: itemsRemaining === 0,
+            isActive:
+              (presale ||
+                candyMachine.data.goLiveDate.toNumber() < new Date().getTime() / 1000) &&
+              (candyMachine.endSettings
+                ? candyMachine.endSettings.endSettingType.date
+                  ? candyMachine.endSettings.number.toNumber() > new Date().getTime() / 1000
+                  : itemsRedeemed < candyMachine.endSettings.number.toNumber()
+                : true),
+            isPresale: presale,
+            goLiveDate: candyMachine.data.goLiveDate,
+            treasury: candyMachine.wallet,
+            tokenMint: candyMachine.tokenMint,
+            gatekeeper: candyMachine.data.gatekeeper,
+            endSettings: candyMachine.data.endSettings,
+            whitelistMintSettings: candyMachine.data.whitelistMintSettings,
+            hiddenSettings: candyMachine.data.hiddenSettings,
+            price: candyMachine.data.price,
+          },
+        });
+      
+        console.log({
+          itemsAvailable,
+          itemsRedeemed,
+          itemsRemaining,
+          goLiveData,
+          goLiveDateTimeString,
+        });
+    };
+
+    const getCollectionPDA = async (candyMachineAddress) => {
+        return (
+            await web3.PublicKey.findProgramAddress(
+                [Buffer.from("collection"), candyMachineAddress.toBuffer()],
+                candyMachineProgram
+            )
+        );
+    };
+
+    const getCollectionAuthorityRecordPDA = async (mint, newAuthority) => {
+        return (
+          await web3.PublicKey.findProgramAddress(
+            [
+              Buffer.from("metadata"),
+              TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+              mint.toBuffer(),
+              Buffer.from("collection_authority"),
+              newAuthority.toBuffer(),
+            ],
+            TOKEN_METADATA_PROGRAM_ID
+          )
+        )[0];
+      };
 
     const mintToken = async () => {
         const mint = web3.Keypair.generate();
@@ -210,36 +320,97 @@ const CandyMachine = ({ walletAddress }) => {
                     systemProgram: SystemProgram.programId,
                     rent: web3.SYSVAR_RENT_PUBKEY,
                     clock: web3.SYSVAR_CLOCK_PUBKEY,
-                    recentBlockhashes: web3.SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
+                    recentBlockhashes: web3.SYSVAR_SLOT_HASHES_PUBKEY,
                     instructionSysvarAccount: web3.SYSVAR_INSTRUCTIONS_PUBKEY,
                 },
                 remainingAccounts: remainingAccounts.length > 0 ? remainingAccounts : undefined,
             })
         );
 
+        const [collectionPDA] = await getCollectionPDA(candyMachineAddress);
+        const collectionPDAAccount =
+            await candyMachine.program.provider.connection.getAccountInfo(
+                collectionPDA
+            );
+
+        if (collectionPDAAccount && candyMachine.state.retainAuthority) {
+            try {
+            const collectionData =
+                (await candyMachine.program.account.collectionPda.fetch(
+                 collectionPDA
+                ));
+            console.log(collectionData);
+            const collectionMint = collectionData.mint;
+            const collectionAuthorityRecord = await getCollectionAuthorityRecordPDA(
+                collectionMint,
+                collectionPDA
+            );
+            console.log(collectionMint);
+            if (collectionMint) {
+                const collectionMetadata = await getMetadata(collectionMint);
+                const collectionMasterEdition = await getMasterEdition(collectionMint);
+                console.log("Collection PDA: ", collectionPDA.toBase58());
+                console.log("Authority: ", candyMachine.state.authority.toBase58());
+                instructions.push(
+                await candyMachine.program.instruction.setCollectionDuringMint({
+                    accounts: {
+                    candyMachine: candyMachineAddress,
+                    metadata: metadataAddress,
+                    payer: walletAddress.publicKey,
+                    collectionPda: collectionPDA,
+                    tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+                    instructions: web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+                    collectionMint,
+                    collectionMetadata,
+                    collectionMasterEdition,
+                    authority: candyMachine.state.authority,
+                    collectionAuthorityRecord,
+                    },
+                })
+                );
+            }
+            } catch (error) {
+            console.error(error);
+            }
+        }
+
         try {
             return (
                 await sendTransactions(
                     candyMachine.program.provider.connection,
                     candyMachine.program.provider.wallet,
-                    [instructions, cleanupInstructions],
-                    [signers, []]
+                    [instructions],
+                    [signers],
+                    "StopOnFailure",
+                    "singleGossip",
+                    () => {},
+                    () => false,
+                    undefined
                 )
-            ).txs.map((t) => t.txid);
+            ).txs.map((t) => {
+                console.log(t);
+                t.txid});
         } catch (e) {
             console.log(e);
         }
         return [];
     };
 
+    useEffect(() => {
+        getCandyMachineState();
+    }, []);
+
     return (
-        <div className="machine-container">
-            <p>Data Drop:</p>
-            <p>Itens Mintados:</p>
+        // Mostre isso apenas se candyMachine e candyMachine.state estiverem disponíveis
+        candyMachine && candyMachine.state && (
+          <div className="machine-container">
+            <p>{`Data do Drop: ${candyMachine.state.goLiveDateTimeString}`}</p>
+            <p>{`Itens Cunhados: ${candyMachine.state.itemsRedeemed} / ${candyMachine.state.itemsAvailable}`}</p>
             <button className="cta-button mint-button" onClick={mintToken}>
-                Mintar NFT
+                Cunhar NFT
             </button>
-        </div>
+          </div>
+        )
     );
 };
 
