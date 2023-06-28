@@ -3,6 +3,10 @@
     flex-direction: column;
 }
 
+.drop-date {
+    margin-top: 5px;
+}
+
 .gif-container {
     display: flex;
     flex-direction: column;

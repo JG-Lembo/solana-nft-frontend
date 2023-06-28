@@ -387,8 +387,7 @@ const CandyMachine = ({ walletAddress }) => {
                 }
             }
         
-            return (
-                await sendTransactions(
+            await sendTransactions(
                     candyMachine.program.provider.connection,
                     candyMachine.program.provider.wallet,
                     [instructions],
@@ -398,10 +397,10 @@ const CandyMachine = ({ walletAddress }) => {
                     () => {},
                     () => false,
                     undefined
-                )
-            ).txs.map((t) => {
-                console.log(t);
-            t.txid});
+            );
+
+            setIsMinting(false);
+            getCandyMachineState();
         } catch (error) {
             let message = error.msg || 'Erro ao mintar. Tente novamente!';
         
@@ -448,11 +447,11 @@ const CandyMachine = ({ walletAddress }) => {
     const renderMintedItems = () => {
         return (
         <div className="gif-container">
-          <p className="sub-text">Minted Items ✨</p>
+          <p className="sub-text">Pokémons Cunhados</p>
           <div className="gif-grid">
             {mints.map((mint) => (
               <div className="gif-item" key={mint}>
-                <img src={mint} alt={`Minted NFT ${mint}`} />
+                <img src={mint} alt={`Pokémon cunhado ${mint}`} />
               </div>
             ))}
           </div>
@@ -499,8 +498,8 @@ const CandyMachine = ({ walletAddress }) => {
         <div className="machine-container">
             {/* Adicione isso no início do nosso componente */}
             {!dropped && renderDropTimer()}
-            {dropped && <p>{`Data do Drop: ${candyMachine.state.goLiveDateTimeString}`}</p>}
-            <p>{`Itens Cunhados: ${candyMachine.state.itemsRedeemed} / ${candyMachine.state.itemsAvailable}`}</p>
+            {dropped && <p className="drop-date">{`Disponível em: ${candyMachine.state.goLiveDateTimeString}`}</p>}
+            <p>{`Pokémons Cunhados: ${candyMachine.state.itemsRedeemed} / ${candyMachine.state.itemsAvailable}`}</p>
             {/* Verifique se essas propriedades são iguais! */}
             {candyMachine.state.itemsRedeemed === candyMachine.state.itemsAvailable ? (
                 <p className="sub-text">Esgotado!🙊</p>
@@ -515,7 +514,7 @@ const CandyMachine = ({ walletAddress }) => {
                 )
             }
             {mints.length > 0 && renderMintedItems()}
-            {isLoadingMints && <p>CARREGANDO CUNHAGENS...</p>}
+            {candyMachine.state.itemsRedeemed > 0 && isLoadingMints && <p>CARREGANDO CUNHAGENS...</p>}
         </div>
         )
     );

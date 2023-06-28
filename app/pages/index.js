@@ -4,9 +4,8 @@ import dynamic from 'next/dynamic';
 
 import CandyMachine from "../components/CandyMachine";
 
-// Constantes
-const TWITTER_HANDLE = "_buildspace";
-const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
+import Image from "next/future/image";
+import pokeball from "../public/pokeball.svg";
 
 const Home = () => {
 const WalletMultiButtonDynamic = dynamic(
@@ -30,14 +29,14 @@ const WalletMultiButtonDynamic = dynamic(
       <div className="App">
           <div className="container">
               <div className="header-container">
-                  <p className="header">🍭 Candy Drop</p>
-                  <p className="sub-text">Máquina de NFTs com cunhagem justa</p>
-                  {/* Renderize o botão de conexão com a carteira bem aqui */}
-                  {wallet.publicKey ? <CandyMachine walletAddress={wallet} /> : renderNotConnectedContainer()}
-              </div>
-              <div className="footer-container">
-                  <img alt="Twitter Logo" className="twitter-logo" src="twitter-logo.svg" />
-                  <a className="footer-text" href={TWITTER_LINK} target="_blank" rel="noreferrer">{`contruido na @${TWITTER_HANDLE}`}</a>
+                <div className="title">
+                    <Image alt="Pokeball" className="pokeball" src={pokeball}/>
+                    <p className="header">Pokémon Palette Drop</p>
+                    <Image alt="Pokeball" className="pokeball" src={pokeball}/>
+                </div>
+                <p className="sub-text">Máquina de NFTs de Pokémon</p>
+                {/* Renderize o botão de conexão com a carteira bem aqui */}
+                {wallet.publicKey ? <CandyMachine walletAddress={wallet} /> : renderNotConnectedContainer()}
               </div>
           </div>
       </div>
