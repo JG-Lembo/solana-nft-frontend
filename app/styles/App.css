@@ -21,10 +21,6 @@
     padding: 30px;
 }
 
-.header-container {
-    /* background-color: #60c657; */
-}
-
 .header {
     margin: 10px 10px 0 10px;
     font-size: 50px;
@@ -68,6 +64,7 @@
     background-size: 200% 200%;
     animation: gradient-animation 4s ease infinite;
     margin-left: 10px;
+    margin-bottom: 30px;
 }
 
 .footer-container {

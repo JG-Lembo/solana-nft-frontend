@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Program, Provider, web3 } from "@project-serum/anchor";
 import { MintLayout, TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
-import { sendTransactions } from "./connection.tsx";
+import { sendTransactions, sleep } from "./connection.tsx";
 import {
     SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
     getAtaForMint,
@@ -10,6 +10,8 @@ import {
     getNetworkToken,
     CIVIC,
 } from "./helpers.ts";
+
+import {TailSpin} from "react-loader-spinner";
 
 const { SystemProgram } = web3;
 const opts = {
@@ -32,6 +34,7 @@ const CandyMachine = ({ walletAddress }) => {
     const [isMinting, setIsMinting] = useState(false);
     const [isLoadingMints, setIsLoadingMints] = useState(false);
     const [dropped, setDropped] = useState(false);
+    const [isUpdatingState, setIsUpdatingState] = useState(false);
 
     const getCandyMachineCreator = async (candyMachine) => {
         const candyMachineID = new PublicKey(candyMachine);
@@ -98,8 +101,7 @@ const CandyMachine = ({ walletAddress }) => {
         return provider;
     };
 
-    const getCandyMachineState = async () => { 
-
+    const getCandyMachineState = async () => {
         const provider = getProvider();
         const idl = await Program.fetchIdl(candyMachineProgram, provider);
         const program = new Program(idl, candyMachineProgram, provider);
@@ -400,7 +402,11 @@ const CandyMachine = ({ walletAddress }) => {
             );
 
             setIsMinting(false);
-            getCandyMachineState();
+            setIsUpdatingState(true);
+            await sleep(30000);
+            await getCandyMachineState();
+            setIsUpdatingState(false);
+
         } catch (error) {
             let message = error.msg || 'Erro ao mintar. Tente novamente!';
         
@@ -447,7 +453,7 @@ const CandyMachine = ({ walletAddress }) => {
     const renderMintedItems = () => {
         return (
         <div className="gif-container">
-          <p className="sub-text">Pokémons Cunhados</p>
+          <p className="minted-items">Pokémons Cunhados</p>
           <div className="gif-grid">
             {mints.map((mint) => (
               <div className="gif-item" key={mint}>
@@ -496,25 +502,57 @@ const CandyMachine = ({ walletAddress }) => {
         candyMachine &&
         candyMachine.state && (
         <div className="machine-container">
-            {/* Adicione isso no início do nosso componente */}
             {!dropped && renderDropTimer()}
             {dropped && <p className="drop-date">{`Disponível em: ${candyMachine.state.goLiveDateTimeString}`}</p>}
-            <p>{`Pokémons Cunhados: ${candyMachine.state.itemsRedeemed} / ${candyMachine.state.itemsAvailable}`}</p>
+            {!isUpdatingState && <p className="minted-number">{`Pokémons Cunhados: ${candyMachine.state.itemsRedeemed} / ${candyMachine.state.itemsAvailable}`}</p>}
+            {isUpdatingState &&
+                (
+                    <div className="div-loader minted-number-update">
+                        <p className="minted-number-update">Atualizando dados de cunhagem...</p>
+                        <TailSpin
+                            height="16"
+                            width="16"
+                            color="#ffffff"
+                            ariaLabel="tail-spin-loading"
+                            radius="1"
+                            wrapperStyle={{ justifyContent: "center" }}
+                            wrapperClass=""
+                            visible={true}
+                        />
+                    </div>
+                )
+            }
             {/* Verifique se essas propriedades são iguais! */}
             {candyMachine.state.itemsRedeemed === candyMachine.state.itemsAvailable ? (
-                <p className="sub-text">Esgotado!🙊</p>
+                <p className="sold-out">Esgotado!🙊</p>
                 ) : (
                 <button
                     className="cta-button mint-button"
                     onClick={mintToken}
-                    disabled={isMinting || !dropped}
+                    disabled={isMinting || !dropped || isUpdatingState}
                 >
                     Cunhar NFT
                 </button>
                 )
             }
+            {candyMachine.state.itemsRedeemed > 0 && isLoadingMints && 
+                (
+                    <div className="div-loader mint-update">
+                        <p className="mint-update">ATUALIZANDO CUNHAGENS...</p>
+                        <TailSpin
+                            height="16"
+                            width="16"
+                            color="#ffffff"
+                            ariaLabel="tail-spin-loading"
+                            radius="1"
+                            wrapperStyle={{ justifyContent: "center" }}
+                            wrapperClass=""
+                            visible={true}
+                        />
+                    </div>
+                )
+            }
             {mints.length > 0 && renderMintedItems()}
-            {candyMachine.state.itemsRedeemed > 0 && isLoadingMints && <p>CARREGANDO CUNHAGENS...</p>}
         </div>
         )
     );

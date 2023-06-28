@@ -5,6 +5,53 @@
 
 .drop-date {
     margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.minted-number {
+    margin-top: 10px;
+    margin-bottom: 25px;
+}
+
+.sold-out {
+    font-size: 25px;
+    margin-top: -10px;
+    margin-bottom: 15px;
+}
+
+.minted-items {
+    margin-top: 0px;
+    font-size: 25px;
+}
+
+.div-loader.mint-update{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    margin-top: -5px;
+}
+
+.mint-update{
+    margin-bottom: 0px;
+    margin-top: 0px;
+}
+
+.div-loader.minted-number-update{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 15px;
+    margin-bottom: 30px;
+}
+
+.minted-number-update{
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.div-loader p {
+    margin-right: 10px;
 }
 
 .gif-container {
