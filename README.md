@@ -1,6 +1,5 @@
 # Projeto Pokémon Palette Drop (Solana NFT)
 Construído na Solana Devnet
-Criado com Solana 1.14.17
 
 ## A Plataforma
 
