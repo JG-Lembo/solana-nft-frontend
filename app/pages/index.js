@@ -1,6 +1,7 @@
 import React from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from 'next/dynamic';
+import Head from 'next/head';
 
 import CandyMachine from "../components/CandyMachine";
 
@@ -26,20 +27,24 @@ const WalletMultiButtonDynamic = dynamic(
     );
 
     return (
-      <div className="App">
-          <div className="container">
-              <div className="header-container">
-                <div className="title">
-                    <Image alt="Pokeball" className="pokeball" src={pokeball}/>
-                    <p className="header">Pokémon Palette Drop</p>
-                    <Image alt="Pokeball" className="pokeball" src={pokeball}/>
+        <div className="App">
+            <Head>
+                <title>Pokémon Palette Drop</title>
+                <link rel="shortcut icon" href="pokeball.svg" type="image/x-icon" />
+            </Head>
+            <div className="container">
+                <div className="header-container">
+                    <div className="title">
+                        <Image alt="Pokeball" className="pokeball" src={pokeball}/>
+                        <p className="header">Pokémon Palette Drop</p>
+                        <Image alt="Pokeball" className="pokeball" src={pokeball}/>
+                    </div>
+                    <p className="sub-text">Máquina de NFTs de Pokémon</p>
+                    {/* Renderize o botão de conexão com a carteira bem aqui */}
+                    {wallet.publicKey ? <CandyMachine walletAddress={wallet} /> : renderNotConnectedContainer()}
                 </div>
-                <p className="sub-text">Máquina de NFTs de Pokémon</p>
-                {/* Renderize o botão de conexão com a carteira bem aqui */}
-                {wallet.publicKey ? <CandyMachine walletAddress={wallet} /> : renderNotConnectedContainer()}
-              </div>
-          </div>
-      </div>
+            </div>
+        </div>
     );
 };
 
