@@ -1,6 +1,9 @@
 # Projeto Pokémon Palette Drop (Solana NFT)
 Construído na Solana Devnet
 
+
+Exibição do projeto em [https://www.loom.com/share/0105b4137de54338adb33f566dfbdd28?sid=02441d0a-9045-4b5c-a627-867c2761aaf0](https://www.loom.com/share/0105b4137de54338adb33f566dfbdd28?sid=02441d0a-9045-4b5c-a627-867c2761aaf0).
+
 ## A Plataforma
 
 A plataforma do projeto tem como funcionalidade permitir que os usuários cunhem 3 NFTs, que compõem uma coleção de 3 Pokémons com paletas de cores trocadas. 
